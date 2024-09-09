@@ -3,45 +3,31 @@ const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const nodemailer = require("nodemailer");
 
-const verificationCodes = {};
-
-const generateVerificationCode = () => {
-    return Math.floor(100000 + Math.random() * 900000).toString(); 
-};
+const users = {};
 
 const signup = async (req, res) => {
     try {
-        const { email, phone, name, password } = req.body;
+        const { name,  phone, email, password } = req.body;
+        if (!name || !phone || !email || !password){
+            res.status(400).send("bad request")
+            return;
+        }
 
         if (await User.findOne({ email })) {
             res.status(409).send("User already exists");
             return;
         }
 
-        const verificationCode = generateVerificationCode();
-        verificationCodes[verificationCode] = new User({ email, phone, name, password });
+        const code = generateVerificationCode();
+        const hashedPassword = await bcrypt.hash(password, 10);
 
-        const transporter = nodemailer.createTransport({
-            service: 'Gmail', 
-            auth: {
-                user: process.env.MAIL,
-                pass: process.env.MAIL_PASS
-            }
-        });
+        users[code] = new User({ ...req.body, password : hashedPassword });
 
-        const mailContent = {
-            from: `Your App Name ${process.env.MAIL}`, 
-            to: email,
-            subject: 'Verify your email',
-            html: `<p>Hi ${name},</p><p>Please verify your account by clicking the following link: <a href="http://localhost:3001/auth/verify?code=${verificationCode}">Verify your account</a></p>` // html body
-        };
+        sendAuthEmail({...req.body, code});
 
-        await transporter.sendMail(mailContent);
-
-        res.status(200).json({ message: "Verification email sent" });
+        res.status(200).json({ message: "Check your email" });
     } catch (error) {
-        console.error(error);
-        res.status(400).send("Failed to send verification code");
+        res.status(400).send("Failed to signup");
     }
 };
 
@@ -51,10 +37,10 @@ const verify = async (req, res) => {
     if (!code) {
         return res.status(400).send("Verification code is missing");
     }
-
-    if (verificationCodes[code]) {
+    
+    if (users[code]) {
         res.status(200).send("Verification successful");
-        const user = verificationCodes[code];
+        const user = users[code];
         await user.save();
 
     } else {
@@ -67,6 +53,7 @@ const signin = async (req, res) => {
 
     try {
         const user = await User.findOne({ email: req.body.email });
+     
         if (!user) {
             res.status(409).send("user with email and password not found");
             return;
@@ -82,19 +69,47 @@ const signin = async (req, res) => {
           return;
         }
 
-        const token = jwt.sign(
-            {
-              _id: user._id,
-              role : user.role
-            },
-            process.env.JWT_SECRET
-          );
+        const token = generateToken(user);
       
         res.status(200).send({ token });
 
       } catch (error) {
         res.status(400).send("login user fail");
       }
+}
+
+/* -------------------------------------------- */
+function generateVerificationCode(){
+    return Math.floor(100000 + Math.random() * 900000).toString(); 
+};
+
+ function generateToken(user){
+     return jwt.sign(
+        {
+          _id: user._id,
+          role : user.role
+        },
+        process.env.JWT_SECRET
+      );
+}
+
+async function sendAuthEmail(user){ 
+    const transporter = nodemailer.createTransport({
+        service: 'Gmail', 
+        auth: {
+            user: process.env.MAIL,
+            pass: process.env.MAIL_PASS
+        }
+    });
+    
+    const mailContent = {
+        from: `Bank ${process.env.MAIL}`, 
+        to: user.email,
+        subject: 'Verify your email',
+        html: `<p>Hi ${user.name},</p><p>Please verify your account by clicking the following link: <a href="http://localhost:3001/auth/verify?code=${user.code}">Verify your account</a></p>` 
+    };
+
+    await transporter.sendMail(mailContent);
 }
 
 module.exports = { verify, signin, signup };
