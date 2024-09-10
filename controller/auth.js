@@ -18,18 +18,21 @@ const signup = async (req, res) => {
             return;
         }
 
-        const code = generateVerificationCode();
         const hashedPassword = await bcrypt.hash(password, 10);
         const user = new User({ ...req.body, password : hashedPassword });
-        user.code = code;
+        user.code = generateVerificationCode();
 
         users[user._id] = user;
+
+        setTimeout(() => {
+            delete users[user._id]; 
+        }, 1000 * 60 * 30);
        
-        sendAuthEmail({...req.body, code, id : user._id});
+        sendAuthEmail({...req.body, code : user.code, id : user._id});
 
         res.status(200).json({ message: "Check your email" });
     } catch (error) {
-        res.status(400).send("Failed to signup");
+        res.status(400).send({ message: "Failed to signup"});
     }
 };
 
@@ -37,29 +40,39 @@ const verify = async (req, res) => {
     const { userId, code } = req.query;
 
     if (!code || !userId) {
-        return res.status(400).send({ message: "Verification code is missing"});
+        return res.status(400).send({ message: "bad request"});
     }
-
+    
+    console.log(users[userId].code);
+    
     if (users[userId] && users[userId].code == code) {
         res.status(200).send({ message: "Verification successful"});
         const user = users[userId];
+
         await user.save();
 
     } else {
-        res.status(400).send({ message:"Invalid verification code"});
+        res.status(303).redirect("https://google.com/");
     }
 };
 
 const signin = async (req, res) => {
     try {
-        const user = await User.findOne({ email: req.body.email });
+        const { email, password } = req.body;
+
+        if ( !email || !password) {
+            res.status(400).send({ message: "Bad request" });
+            return;
+        }
+
+        const user = await User.findOne({ email: email });
      
         if (!user) {
-            res.status(409).send({message : "User with email and password not found"});
+            res.status(400).send({message : "User with email and password not found"});
             return;
         }
     
-        const isValidPassword = await bcrypt.compare(req.body.password, user.password);
+        const isValidPassword = await bcrypt.compare(password, user.password);
 
         if (!isValidPassword) {
             res.status(400).send({message : "User with email and password not found"});
@@ -81,7 +94,6 @@ const signout = (req, res) => {
     res.clearCookie('token'); 
     res.status(200).send({ message: "signout successful" });
 };
-
 
 /* -------------------------------------------- */
 function generateVerificationCode(){
@@ -118,5 +130,5 @@ async function sendAuthEmail(user){
     await transporter.sendMail(mailContent);
 }
 
-module.exports = { verify, signin, signup };
+module.exports = { verify, signup, signin, signout };
 
