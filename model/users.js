@@ -25,6 +25,11 @@ const userSchema = new mongoose.Schema({
     date: {
         type: Date,
         default: Date.now
+    },
+    status: {
+        type : String,
+        enum : ['pending', 'block', 'active' ],
+        default :  'pending'
     }
 });
 
