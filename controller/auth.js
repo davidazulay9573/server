@@ -3,8 +3,6 @@ const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const nodemailer = require("nodemailer");
 
-const users = {};
-
 const signup = async (req, res) => {
     try {
         const { name,  phone, email, password } = req.body;
