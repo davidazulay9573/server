@@ -22,17 +22,20 @@ const userSchema = new mongoose.Schema({
         type : String,
         default: ""
     },
-    date: {
-        type: Date,
-        default: Date.now
-    },
     status: {
         type : String,
-        enum : ['pending', 'block', 'active' ],
+        enum : ['pending', 'block', 'active'],
         default :  'pending'
+    },
+    balance : {
+        type : Number,
+        default : 0
     }
-});
+
+},
+{ timestamps : true }
+);
 
 const User = mongoose.model("User", userSchema);
 
-module.exports = {User};
+module.exports = { User };

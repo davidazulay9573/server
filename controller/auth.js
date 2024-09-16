@@ -25,18 +25,18 @@ const signup = async (req, res) => {
 
         res.status(200).json({ message: "Check your email" });
     } catch (error) {
-        res.status(400).send({ message: "Failed to signup"});
+        res.status(400).send({ message: error});
     }
 };
 
-const verify = async (req, res) => {
+const verifyEmail = async (req, res) => {
     const { userId } = req.query;
 
     if (!userId) {
         return res.status(400).send({ message: "bad request"});
     }
 
-    if (await User.findOneAndUpdate({ _id: userId, status : "pending" }, { status: 'active' })){
+    if (await User.findOneAndUpdate({ _id: userId, status : "pending" }, { status: "active" })){
         res.status(200).redirect("http://google.com");
     }else{
         res.status(400).send({ message: "Verification fail"});
@@ -70,20 +70,15 @@ const signin = async (req, res) => {
             .send({ token });
         
     } catch (error) {
-        res.status(400).send({message : "signin failed"});
+        res.status(500).send({message : "signin failed"});
     }
-};
-
-const signout = (req, res) => {
-    res.clearCookie('token'); 
-    res.status(200).send({ message: "signout successful" });
 };
 
 /* -------------------------------------------- */
 function generateToken(user){
      return jwt.sign(
         {
-          _id: user._id,
+          id: user._id,
           role : user.role
         },
         process.env.JWT_SECRET,
@@ -104,11 +99,11 @@ async function sendAuthEmail(user){
         from: `Bank ${process.env.MAIL}`, 
         to: user.email,
         subject: 'Verify your email',
-        html: `<p>Hi ${user.name},</p><p>Please verify your account by clicking the following link: <a href="http://localhost:3001/auth/verify?userId=${user.id}">Verify your account</a></p>` 
+        html: `<p>Hi ${user.name},</p><p>Please verify your account by clicking the following link: <a href="http://localhost:3001/api/auth/verify?userId=${user.id}">Verify your account</a></p>` 
     };
 
     await transporter.sendMail(mailContent);
 }
 
-module.exports = { verify, signup, signin, signout };
+module.exports = { verifyEmail, signup, signin };
 
