@@ -3,13 +3,20 @@ const { User } = require("../model/users");
 
 const getTransactions = async (req, res) => {
     try {
-        const transactions = await Transaction.find();
+        const userId = req.user.id;
 
-        res.status(200).send("{}");
+        const transactions = await Transaction.find({
+            $or: [
+                { from: userId },
+                { to: userId }
+            ]
+        });
+
+        res.status(200).send(transactions);
     } catch (error) {
         res.status(500).send("Internal server error");
     }
-}
+};
 
 const createTransaction = async (req, res) => {
 
