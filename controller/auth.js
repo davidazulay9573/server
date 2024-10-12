@@ -37,7 +37,7 @@ const verifyEmail = async (req, res) => {
     }
 
     if (await User.findOneAndUpdate({ _id: userId, status : "pending" }, { status: "active" })){
-        res.status(200).redirect("http://google.com");
+        res.status(200).redirect("http://localhost:4200/transactions");
     }else{
         res.status(400).send({ message: "Verification fail"});
     }

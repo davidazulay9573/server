@@ -1,3 +1,4 @@
+version: '3'
 services:
   app:
     build: .
@@ -6,12 +7,13 @@ services:
     depends_on:
       - mongo
     environment:
-      - MONGO_URI=mongodb://mongo:27017/mydatabase
-
+      - MONGO_URI=mongodb://mongo:27017/transactio
+      - JWT_SECRET=kkkkkkkkkkkkkkkkkkkkkkkkkk
+      - MAIL=ameatrest@gmail.com
+      - MAIL_PASS=ielhyqywqyyyetxy
   mongo:
     image: mongo:latest
     ports:
       - '27017:27017'
     volumes:
       - ./data/db:/data/db
-
