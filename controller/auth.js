@@ -1,4 +1,4 @@
-const { User } = require("../model/user");
+const { User } = require("../model/users");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const nodemailer = require("nodemailer");
@@ -79,7 +79,7 @@ function generateToken(user){
      return jwt.sign(
         {
           id: user._id,
-           ...user
+          role : user.role
         },
         process.env.JWT_SECRET,
         { expiresIn: '30m' }
