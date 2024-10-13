@@ -7,7 +7,7 @@ services:
     depends_on:
       - mongo
     environment:
-      - MONGO_URI=mongodb://mongo:27017/transactio
+      - MONGO_URI=mongodb://mongo:27017/transactioijjjjjjjjjjjjjj
       - JWT_SECRET=kkkkkkkkkkkkkkkkkkkkkkkkkk
       - MAIL=ameatrest@gmail.com
       - MAIL_PASS=ielhyqywqyyyetxy
